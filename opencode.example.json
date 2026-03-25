@@ -20,18 +20,34 @@
       "*.env.*": "deny",
       "*.env.example": "allow"
     },
-    "edit": "allow",
+    "edit": {
+      "~/git/**": "deny",
+      "~/.config/neovim/**": "deny"
+    },
     "glob": "allow",
     "grep": "allow",
     "list": "allow",
     "bash": {
       "*": "ask",
-      "rm *": "deny",
-      "npm *": "allow",
-      "dotnet *": "allow",
-      "git *": "allow",
       "git commit *": "deny",
-      "git push *": "deny"
+      "git tag *": "deny",
+      "git push *": "deny",
+      "rm *": "deny",
+      "npm run *": "allow",
+      "bun run *": "allow",
+      "dotnet run *": "allow",
+      "git diff *": "allow",
+      "git grep *": "allow",
+      "git log *": "allow",
+      "git shortlog *": "allow",
+      "git show *": "allow",
+      "git stash *": "allow",
+      "git status *": "allow",
+      "grep *": "allow",
+      "cat *": "allow",
+      "head *": "allow",
+      "tail *": "allow",
+      "wc *": "allow"
     },
     "task": "allow",
     "lsp": "allow",
@@ -43,6 +59,16 @@
     }
   },
   "watcher": {
-    "ignore": ["node_modules/**", "dist/**", ".git/**", "*/obj/**", "*/bin/**"]
+    "ignore": [
+      "node_modules/**",
+      "dist/**",
+      "out/**",
+      "out-tsc/**",
+      ".git/**",
+      ".cache/**",
+      ".angular/**",
+      "*/obj/**",
+      "*/bin/**"
+    ]
   }
 }
