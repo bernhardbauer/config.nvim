@@ -42,7 +42,7 @@ return {
               '--hidden',
               '--no-ignore-vcs',
               '-g',
-              '!{.git,.idea,.vs,.vscode,.angular,.cache,node_modules,dist,out,out-tsc,bin,obj}',
+              '!{.git,.idea,.vs,.vscode,.angular,.cache,node_modules,dist,out,out-tsc,bin,obj,coverage}',
             },
           },
         },
