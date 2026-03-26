@@ -5,10 +5,47 @@ return {
       require('other-nvim').setup {
         mappings = {
           'angular',
+          -- TypeScript: source ↔ test
+          { pattern = '(.*)/(.*)%.ts$', target = '%1/%2.spec.ts' },
+          { pattern = '(.*)/(.*)%.spec%.ts$', target = '%1/%2.ts' },
+          -- JavaScript: source ↔ test
+          { pattern = '(.*)/(.*)%.js$', target = '%1/%2.spec.js' },
+          { pattern = '(.*)/(.*)%.spec%.js$', target = '%1/%2.js' },
         },
         rememberBuffers = false,
         hooks = {
           onFindOtherFiles = function(matches)
+            local current = vim.fn.expand '%:p'
+            local dir = vim.fn.expand '%:p:h'
+            local name = vim.fn.expand '%:t'
+
+            local seen = {}
+            for _, m in ipairs(matches) do
+              seen[vim.fn.fnamemodify(m.filename, ':p')] = true
+            end
+            seen[current] = true
+
+            -- Strip extensions progressively to find sibling files:
+            -- app.component.html → glob app.component.* → glob app.*
+            local stem = name
+            while true do
+              local shorter = stem:match '(.+)%.[^.]+$'
+              if not shorter then
+                break
+              end
+              stem = shorter
+              for _, path in ipairs(vim.fn.glob(dir .. '/' .. stem .. '.*', false, true)) do
+                local abs = vim.fn.fnamemodify(path, ':p')
+                if not seen[abs] and vim.fn.isdirectory(abs) == 0 then
+                  table.insert(matches, { filename = abs, exists = true })
+                  seen[abs] = true
+                end
+              end
+              if not stem:find '%.' then
+                break
+              end
+            end
+
             if #matches <= 1 then
               return matches
             end
@@ -20,9 +57,9 @@ return {
               end,
             }, function(item)
               if item then
-                local dir = vim.fn.fnamemodify(item.filename, ':h')
-                if vim.fn.isdirectory(dir) == 0 then
-                  vim.fn.mkdir(dir, 'p')
+                local d = vim.fn.fnamemodify(item.filename, ':h')
+                if vim.fn.isdirectory(d) == 0 then
+                  vim.fn.mkdir(d, 'p')
                 end
                 vim.cmd('edit ' .. vim.fn.fnameescape(item.filename))
               end
