@@ -36,6 +36,7 @@ return {
         pickers = {
           find_files = {
             hidden = true,
+            push_tagstack_on_edit = true,
             find_command = {
               'rg',
               '--files',
