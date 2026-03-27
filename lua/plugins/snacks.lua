@@ -15,7 +15,12 @@ return {
       input = {}, -- used by opencode.ask()
       picker = {
         hidden = true, -- show hidden files by default across all sources
-      }, -- used by opencode.select()
+        sources = {
+          explorer = {
+            jump = { close = false, tagstack = true },
+          },
+        },
+      },
       explorer = {
         replace_netrw = false, -- don't auto-open explorer on `nvim .`
       },

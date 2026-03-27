@@ -15,6 +15,12 @@ return {
         rememberBuffers = false,
         hooks = {
           onFindOtherFiles = function(matches)
+            local function push_tagstack()
+              local pos = vim.fn.getpos '.'
+              pos[1] = vim.api.nvim_get_current_buf()
+              vim.fn.settagstack(vim.fn.win_getid(), { items = { { tagname = vim.fn.expand '<cword>', from = pos } } }, 't')
+            end
+
             local current = vim.fn.expand '%:p'
             local dir = vim.fn.expand '%:p:h'
             local name = vim.fn.expand '%:t'
@@ -47,6 +53,9 @@ return {
             end
 
             if #matches <= 1 then
+              if #matches == 1 then
+                push_tagstack()
+              end
               return matches
             end
             vim.ui.select(matches, {
@@ -57,6 +66,7 @@ return {
               end,
             }, function(item)
               if item then
+                push_tagstack()
                 local d = vim.fn.fnamemodify(item.filename, ':h')
                 if vim.fn.isdirectory(d) == 0 then
                   vim.fn.mkdir(d, 'p')
