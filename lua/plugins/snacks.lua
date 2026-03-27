@@ -26,13 +26,23 @@ return {
       },
       indent = {},
       gitbrowse = {},
-      lazygit = {},
+      lazygit = {
+        config = {
+          quitOnTopLevelReturn = true,
+          os = { editPreset = 'nvim-remote' },
+          git = {
+            branchPrefix = 'feature/',
+            disableForcePushing = true,
+          },
+        },
+      },
       notifier = {},
     },
     keys = {
-      { '<leader>gg', "<cmd>lua Snacks.lazygit.open()<cr>", desc = 'Lazygit' },
-      { '\\', "<cmd>lua Snacks.explorer.open()<cr>", desc = 'Toggle Explorer' },
-      { '<leader>xn', "<cmd>lua Snacks.notifier.show_history()<cr>", desc = 'Notification History' },
+      { '<leader>gg', '<cmd>lua Snacks.lazygit.open()<cr>', desc = '[G]it (Lazygit)' },
+      { '<leader>gl', '<cmd>lua Snacks.lazygit.log_file()<cr>', desc = '[G]it file log' },
+      { '\\', '<cmd>lua Snacks.explorer.open()<cr>', desc = 'Toggle Explorer' },
+      { '<leader>xn', '<cmd>lua Snacks.notifier.show_history()<cr>', desc = 'Notification History' },
     },
   },
 }
