@@ -1,0 +1,14 @@
+git:
+  commitPrefix:
+    - pattern: "^(bugfix|maintenance)/(\\w+-\\w+).*"
+      replace: "fix($2): "
+    - pattern: "^\\w+/(\\w+-\\w+).*"
+      replace: "feat($1): "
+    - pattern: "^.*"
+      replace: "feat: "
+customCommands:
+  - key: "<space>"
+    context: "localBranches"
+    command: "bash $HOME/.config/nvim/lazygit/git-worktree-checkout.sh '{{.SelectedLocalBranch.Name}}'"
+    description: "Checkout branch in worktree"
+    output: terminal
