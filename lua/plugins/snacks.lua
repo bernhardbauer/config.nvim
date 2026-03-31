@@ -34,6 +34,9 @@ return {
             branchPrefix = 'feature/',
             disableForcePushing = true,
           },
+          branches = {
+            defaultRemote = 'origin',
+          },
         },
       },
       notifier = {},

@@ -1,9 +1,15 @@
 #!/bin/bash
 set -e
 
+CREATE=false
+if [ "$1" = "--create" ]; then
+  CREATE=true
+  shift
+fi
+
 BRANCH="$1"
 if [ -z "$BRANCH" ]; then
-  echo "Usage: $0 <branch-name>"
+  echo "Usage: $0 [--create] <branch-name>"
   exit 1
 fi
 
@@ -60,7 +66,11 @@ else
   grep -qxF '.worktrees' "$EXCLUDE_FILE" 2>/dev/null || echo '.worktrees' >> "$EXCLUDE_FILE"
 
   mkdir -p "$(dirname "$WORKTREE_DIR")"
-  git worktree add "$WORKTREE_DIR" "$BRANCH"
+  if [ "$CREATE" = true ]; then
+    git worktree add -b "$BRANCH" "$WORKTREE_DIR"
+  else
+    git worktree add "$WORKTREE_DIR" "$BRANCH"
+  fi
   echo "$WORKTREE_DIR" > "$TMP_FILE"
   echo "→ Created worktree at: $WORKTREE_DIR"
 fi
