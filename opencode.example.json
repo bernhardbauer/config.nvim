@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "enabled_providers": ["amazon-bedrock"],
+  "enabled_providers": ["amazon-bedrock", "openai"],
   "model": "amazon-bedrock/eu.anthropic.claude-sonnet-4-6",
   "small_model": "amazon-bedrock/eu.anthropic.claude-haiku-4-5-20251001-v1:0",
   "provider": {
@@ -35,6 +35,10 @@
       "rm *": "deny",
       "npm run *": "allow",
       "bun run *": "allow",
+      "bunx tsc *": "allow",
+      "bunx eslint *": "allow",
+      "bunx vitest run *": "allow",
+      "bunx playwright test *": "allow",
       "dotnet run *": "allow",
       "git diff *": "allow",
       "git grep *": "allow",
@@ -47,7 +51,9 @@
       "cat *": "allow",
       "head *": "allow",
       "tail *": "allow",
-      "wc *": "allow"
+      "wc *": "allow",
+      "ls *": "allow",
+      "find *": "allow"
     },
     "task": "allow",
     "lsp": "allow",
