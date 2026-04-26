@@ -61,6 +61,23 @@ return {
       end
       vim.keymap.set('n', '<ScrollWheelUp>',   guard_scroll('<ScrollWheelUp>'),   { expr = true })
       vim.keymap.set('n', '<ScrollWheelDown>', guard_scroll('<ScrollWheelDown>'), { expr = true })
+
+      local augroup = vim.api.nvim_create_augroup('opencode_focus_insert', { clear = true })
+      vim.api.nvim_create_autocmd('WinEnter', {
+        group = augroup,
+        callback = function()
+          local win = vim.api.nvim_get_current_win()
+          if not vim.api.nvim_win_is_valid(win) or not is_opencode_win(win) then
+            return
+          end
+
+          vim.schedule(function()
+            if vim.api.nvim_win_is_valid(win) and vim.api.nvim_get_current_win() == win then
+              vim.cmd 'startinsert'
+            end
+          end)
+        end,
+      })
     end,
     keys = {
       { '<leader>cc', oc('ask', '@this: ', { submit = true }), desc = 'Ask opencode…', mode = { 'n', 'x' } },
