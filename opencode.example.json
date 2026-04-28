@@ -57,7 +57,9 @@
       "tail *": "allow",
       "wc *": "allow",
       "ls *": "allow",
-      "find *": "allow"
+      "find *": "allow",
+      "head *": "allow",
+      "tail *": "allow"
     },
     "task": "allow",
     "lsp": "allow",
