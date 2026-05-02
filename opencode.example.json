@@ -21,6 +21,7 @@
       "*.env.example": "allow"
     },
     "edit": {
+      "*": "allow",
       "~/git/**": "deny",
       "~/.config/neovim/**": "deny"
     },

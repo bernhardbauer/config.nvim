@@ -11,7 +11,7 @@ Personal Neovim configuration, originally based on [kickstart.nvim](https://gith
 - **Completion** via `blink.cmp`: LSP, snippets, buffer, path, with ghost text and signature help
 - **Formatting** via `conform.nvim`: `csharpier`, `stylua`, `prettierd`, `terraform fmt`
 - **Debugging (DAP)**: deep .NET/C# support with auto-build + env parsing, and JS/TS/Jest debugging
-- **Testing**: `neotest` with `neotest-jest` and `neotest-dotnet`
+- **Testing**: `neotest` with `neotest-jest`, local Angular `ng test` integration, `neotest-vitest`, and `neotest-dotnet`
 - **Task running**: `overseer.nvim` with custom `dotnet run/build/test` templates
 - **File explorer + UI**: `snacks.nvim` (explorer, dashboard, lazygit, notifications, indent guides)
 - **Fuzzy finding**: Telescope with branch-file search and fzf-native sorter
@@ -287,6 +287,10 @@ Arrow keys are only mapped during an active debug session and are automatically 
 
 Before launching a .NET debug session, the config walks up the directory tree to find the nearest `.csproj`, runs `dotnet build --configuration Debug`, and reads `Properties/launchSettings.json` to extract environment variables, `ASPNETCORE_URLS`, and command-line args automatically.
 
-### Neotest — Jest Config Discovery
+### Neotest — JS/TS Config Discovery
 
-A custom `find_jest_config_dir()` traversal walks up from the active file to find the nearest `jest.config.{ts,js,mjs,cjs}`, enabling correct behaviour in monorepos with nested jest configs.
+A custom config-dir traversal walks up from the active file to find the nearest Jest or Vitest/Vite config, which keeps `Run Current File` working in monorepos and plain Vitest workspaces.
+
+### Neotest — Angular Workspace Support
+
+Angular projects that use the `@angular/build:unit-test` builder with the Vitest runner are executed through `ng test` instead of raw `vitest`, so file and nearest-test runs use the Angular workspace configuration from `angular.json`.
