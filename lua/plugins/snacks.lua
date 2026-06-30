@@ -45,26 +45,7 @@ return {
       {
         '<leader>gg',
         function()
-          local tmp = '/tmp/lazygit-worktree-path'
-          os.remove(tmp)
-          Snacks.lazygit.open({
-            win = {
-              on_close = function()
-                vim.schedule(function()
-                  local f = io.open(tmp, 'r')
-                  if f then
-                    local path = f:read('*l')
-                    f:close()
-                    os.remove(tmp)
-                    if path and path ~= '' and vim.fn.isdirectory(path) == 1 then
-                      vim.cmd.cd(path)
-                      vim.notify('Switched to worktree: ' .. path, vim.log.levels.INFO)
-                    end
-                  end
-                end)
-              end,
-            },
-          })
+          Snacks.lazygit.open()
         end,
         desc = '[G]it (Lazygit)',
       },
