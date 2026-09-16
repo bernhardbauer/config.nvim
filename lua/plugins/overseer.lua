@@ -25,6 +25,43 @@ return {
         },
       }
 
+      -- Kill a task's whole process tree on stop/restart.
+      --
+      -- Overseer stops tasks with jobstop(), which hangs up the pty and only
+      -- kills the process *tree* two seconds later. A parent that died from
+      -- the hangup (nx does) has had its children reparented by then, so they
+      -- are missed; nx task children run in their own pty session, lose
+      -- their terminal and spin at 100% CPU. Snapshot the descendants while
+      -- the tree is intact, terminate them and the process group, and SIGKILL
+      -- survivors. The default strategy is hardcoded to jobstart, so wrap it.
+      local jobstart = require 'overseer.strategy.jobstart'
+      local orig_stop = jobstart.stop
+      function jobstart.stop(self)
+        local pid = self.job_id and self.job_id > 0 and vim.fn.jobpid(self.job_id) or nil
+        if pid and pid > 0 then
+          local pids = { pid }
+          local function walk(p)
+            local ok, children = pcall(vim.api.nvim_get_proc_children, p)
+            for _, child in ipairs(ok and children or {}) do
+              pids[#pids + 1] = child
+              walk(child)
+            end
+          end
+          walk(pid)
+          local function signal(sig)
+            for _, p in ipairs(pids) do
+              pcall(vim.uv.kill, p, sig)
+            end
+            pcall(vim.uv.kill, -pid, sig) -- pty jobs lead their own group: pgid == pid
+          end
+          signal 'sigterm'
+          vim.defer_fn(function()
+            signal 'sigkill'
+          end, 2000)
+        end
+        orig_stop(self)
+      end
+
       -- Keep the task's pty in sync with the window that shows its output.
       -- Overseer's jobstart strategy sizes the pty once (columns-4 x lines-4)
       -- and never resizes it, while the nvim_open_term grid follows the window.
