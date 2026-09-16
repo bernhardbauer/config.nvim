@@ -147,14 +147,7 @@ return {
       {
         '<C-,>',
         function()
-          -- The right side is a single slot shared with claude code: hide
-          -- whatever is there before showing opencode.
-          local terminal = require 'snacks.terminal'
-          local shown = terminal.get(opencode_cmd, { create = false })
-          if not (shown and shown:valid()) then
-            require('configs.layout').hide_right_terminals()
-          end
-          terminal.toggle(opencode_cmd, { win = { position = 'right', width = opencode_width } })
+          require('configs.layout').toggle_right_terminal(opencode_cmd)
         end,
         desc = 'Toggle opencode',
         mode = { 'n', 't' },

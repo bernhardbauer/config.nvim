@@ -32,6 +32,19 @@ function M.hide_right_terminals()
   return hidden
 end
 
+-- Toggle a snacks terminal in the right-hand slot. Showing it hides whatever
+-- else is in the slot; toggling a shown terminal just hides it.
+---@param cmd? string|string[] command, defaults to the shell
+---@param opts? snacks.terminal.Opts
+function M.toggle_right_terminal(cmd, opts)
+  local terminal = require 'snacks.terminal'
+  local shown = terminal.get(cmd, { create = false })
+  if not (shown and shown:valid()) then
+    M.hide_right_terminals()
+  end
+  return terminal.toggle(cmd, vim.tbl_deep_extend('force', { win = { position = 'right', width = M.right_terminal_width } }, opts or {}))
+end
+
 -- Run `fn` (which opens a full-width bottom panel, e.g. the overseer task
 -- list) with all visible right-hand snacks terminals (e.g. opencode) hidden,
 -- then show them again.

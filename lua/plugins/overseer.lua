@@ -91,6 +91,13 @@ return {
       { '<leader>rv', toggle_task_list, desc = '[R]un [V]iew' },
       { '<leader>rt', '<cmd>OverseerTaskAction<cr>', desc = '[R]un [T]ask Action' },
       { '<leader>rs', '<cmd>OverseerShell<cr>', desc = '[R]un [S]hell' },
+      {
+        '<leader>rx',
+        function()
+          require('configs.layout').toggle_right_terminal()
+        end,
+        desc = '[R]un terminal (right slot)',
+      },
     },
   },
 }
