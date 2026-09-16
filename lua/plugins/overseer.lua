@@ -1,3 +1,13 @@
+local function toggle_task_list()
+  local overseer = require 'overseer'
+  if require('overseer.window').is_open() then
+    return overseer.close()
+  end
+  require('configs.layout').with_right_terminals_hidden(function()
+    overseer.open()
+  end)
+end
+
 return {
   {
     'stevearc/overseer.nvim',
@@ -45,6 +55,26 @@ return {
         end,
       })
 
+      -- A full-height `topleft` vsplit takes its columns from the leftmost
+      -- window of every row first, and 'winfixwidth' only protects a window
+      -- during equalization, so the task list can end up 1 column wide.
+      -- Restore its configured width when that happens.
+      vim.api.nvim_create_autocmd({ 'WinNew', 'WinResized' }, {
+        group = vim.api.nvim_create_augroup('overseer_list_width', { clear = true }),
+        callback = function()
+          vim.schedule(function()
+            local winid = require('overseer.window').get_win_id()
+            if not winid or not vim.api.nvim_win_is_valid(winid) then
+              return
+            end
+            local want = require('overseer.layout').calculate_width(nil, require('overseer.config').task_list)
+            if vim.api.nvim_win_get_width(winid) < want then
+              vim.api.nvim_win_set_width(winid, want)
+            end
+          end)
+        end,
+      })
+
       -- Make Overseer windows non-editable and prevent buffer switching
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'OverseerList',
@@ -58,7 +88,7 @@ return {
     end,
     keys = {
       { '<leader>rr', '<cmd>OverseerRun<cr>', desc = '[R]un [A]ny' },
-      { '<leader>rv', '<cmd>OverseerToggle<cr>', desc = '[R]un [V]iew' },
+      { '<leader>rv', toggle_task_list, desc = '[R]un [V]iew' },
       { '<leader>rt', '<cmd>OverseerTaskAction<cr>', desc = '[R]un [T]ask Action' },
       { '<leader>rs', '<cmd>OverseerShell<cr>', desc = '[R]un [S]hell' },
     },

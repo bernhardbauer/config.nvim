@@ -6,8 +6,9 @@ local oc = function(method, ...)
 end
 
 local opencode_cmd = 'opencode --port'
+local opencode_width = 80
 ---@type snacks.terminal.Opts
-local opencode_start_opts = { win = { position = 'right', enter = false } }
+local opencode_start_opts = { win = { position = 'right', width = opencode_width, enter = false } }
 
 return {
   {
@@ -71,6 +72,57 @@ return {
       vim.keymap.set('n', '<ScrollWheelUp>', guard_scroll '<ScrollWheelUp>', { expr = true })
       vim.keymap.set('n', '<ScrollWheelDown>', guard_scroll '<ScrollWheelDown>', { expr = true })
 
+      -- Keep the opencode window a full-height column on the right at its
+      -- configured width.
+      --  * Width: snacks opens split sidebars (e.g. the explorer) as a
+      --    half-screen split followed by a resize, and Neovim hands the surplus
+      --    columns to the rightmost window of the row, ignoring 'winfixwidth'.
+      --  * Height: a bottom panel (e.g. the overseer task list) is a full-width
+      --    `botright` split that also runs under this window. Re-showing the
+      --    terminal makes it a fresh full-height column again.
+      local function is_full_height(win)
+        local layout = vim.fn.winlayout()
+        if layout[1] == 'leaf' then
+          return true
+        end
+        if layout[1] ~= 'row' then
+          return false
+        end
+        for _, node in ipairs(layout[2]) do
+          if node[1] == 'leaf' and node[2] == win then
+            return true
+          end
+        end
+        return false
+      end
+      vim.api.nvim_create_autocmd({ 'WinNew', 'WinResized' }, {
+        group = vim.api.nvim_create_augroup('opencode_fixed_layout', { clear = true }),
+        callback = function()
+          vim.schedule(function()
+            for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+              if vim.api.nvim_win_get_config(win).relative == '' and is_opencode_win(win) then
+                if not is_full_height(win) then
+                  local buf = vim.api.nvim_win_get_buf(win)
+                  for _, term in ipairs(require('snacks.terminal').list()) do
+                    if term.buf == buf then
+                      local cur = vim.api.nvim_get_current_win()
+                      term:hide()
+                      term:show()
+                      if cur ~= win and vim.api.nvim_win_is_valid(cur) then
+                        vim.api.nvim_set_current_win(cur)
+                      end
+                      return
+                    end
+                  end
+                elseif vim.api.nvim_win_get_width(win) ~= opencode_width then
+                  vim.api.nvim_win_set_width(win, opencode_width)
+                end
+              end
+            end
+          end)
+        end,
+      })
+
       local augroup = vim.api.nvim_create_augroup('opencode_focus_insert', { clear = true })
       vim.api.nvim_create_autocmd('WinEnter', {
         group = augroup,
@@ -94,7 +146,7 @@ return {
       {
         '<C-,>',
         function()
-          require('snacks.terminal').toggle(opencode_cmd, { win = { position = 'right' } })
+          require('snacks.terminal').toggle(opencode_cmd, { win = { position = 'right', width = opencode_width } })
         end,
         desc = 'Toggle opencode',
         mode = { 'n', 't' },
