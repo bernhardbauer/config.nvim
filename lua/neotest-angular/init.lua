@@ -398,12 +398,40 @@ function adapter.build_spec(args)
 
   vim.list_extend(command, args.extra_args or {})
 
+  local env = { NX_TUI = 'false' }
+  local strategy
+  if args.strategy == 'dap' then
+    -- The builder's --debug runs vitest in a single, non-isolated fork with
+    -- the inspector; js-debug attaches to it through child-process
+    -- auto-attach when nx itself is launched under the debugger.
+    table.insert(command, '--debug')
+    -- Keep the nx daemon and plugin worker processes out of the debugged
+    -- process tree; js-debug would attach a session to each of them.
+    env.NX_DAEMON = 'false'
+    env.NX_ISOLATE_PLUGINS = 'false'
+    strategy = {
+      name = 'Debug ' .. project.name .. ' tests',
+      type = 'pwa-node',
+      request = 'launch',
+      cwd = project.workspace_root,
+      runtimeExecutable = command[1],
+      args = { unpack(command, 2) },
+      console = 'integratedTerminal',
+      internalConsoleOptions = 'neverOpen',
+      autoAttachChildProcesses = true,
+      sourceMaps = true,
+      resolveSourceMapLocations = { project.workspace_root .. '/**', '!**/node_modules/**' },
+      skipFiles = { '<node_internals>/**', '**/node_modules/**' },
+    }
+  end
+
   return {
     command = command,
     cwd = project.workspace_root,
     -- neotest runs in a pty; nx would otherwise show its interactive TUI and
     -- linger on its exit countdown.
-    env = { NX_TUI = 'false' },
+    env = env,
+    strategy = strategy,
     context = {
       results_path = results_path,
       file = include_path,
