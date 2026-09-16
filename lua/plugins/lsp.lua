@@ -89,7 +89,37 @@ return {
 
           -- Execute a code action, usually your cursor needs to be on top of an error or a suggestion from your LSP for this to activate.
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-          map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+          -- References from every attached client (ts_ls and angularls both
+          -- answer for .ts files, and angularls alone knows template usages),
+          -- deduplicated by location before showing them in telescope.
+          map('grr', function()
+            vim.lsp.buf.references(nil, {
+              on_list = function(list)
+                local seen, items = {}, {}
+                for _, item in ipairs(list.items) do
+                  local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
+                  if not seen[key] then
+                    seen[key] = true
+                    items[#items + 1] = item
+                  end
+                end
+                local conf = require('telescope.config').values
+                require('telescope.pickers')
+                  .new({}, {
+                    prompt_title = 'LSP References',
+                    finder = require('telescope.finders').new_table {
+                      results = items,
+                      entry_maker = require('telescope.make_entry').gen_from_quickfix {},
+                    },
+                    previewer = conf.qflist_previewer {},
+                    sorter = conf.generic_sorter {},
+                    push_cursor_on_edit = true,
+                    push_tagstack_on_edit = true,
+                  })
+                  :find()
+              end,
+            })
+          end, '[G]oto [R]eferences')
           map('gri', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
