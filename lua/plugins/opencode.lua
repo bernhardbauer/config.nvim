@@ -6,7 +6,7 @@ local oc = function(method, ...)
 end
 
 local opencode_cmd = 'opencode --port'
-local opencode_width = 80
+local opencode_width = require('configs.layout').right_terminal_width
 ---@type snacks.terminal.Opts
 local opencode_start_opts = { win = { position = 'right', width = opencode_width, enter = false } }
 
@@ -47,6 +47,7 @@ return {
       vim.g.opencode_opts = {
         server = {
           start = function()
+            require('configs.layout').hide_right_terminals()
             require('snacks.terminal').open(opencode_cmd, opencode_start_opts)
           end,
         },
@@ -146,7 +147,14 @@ return {
       {
         '<C-,>',
         function()
-          require('snacks.terminal').toggle(opencode_cmd, { win = { position = 'right', width = opencode_width } })
+          -- The right side is a single slot shared with claude code: hide
+          -- whatever is there before showing opencode.
+          local terminal = require 'snacks.terminal'
+          local shown = terminal.get(opencode_cmd, { create = false })
+          if not (shown and shown:valid()) then
+            require('configs.layout').hide_right_terminals()
+          end
+          terminal.toggle(opencode_cmd, { win = { position = 'right', width = opencode_width } })
         end,
         desc = 'Toggle opencode',
         mode = { 'n', 't' },

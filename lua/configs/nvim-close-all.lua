@@ -17,6 +17,7 @@ end
 function M.close_all_panels()
   M.close_non_dap_panels()
   require('dapui').close()
+  require('configs.layout').hide_right_terminals()
 end
 
 return M

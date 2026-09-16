@@ -4,6 +4,34 @@
 
 local M = {}
 
+-- Width (columns) of the right-hand terminal slot, shared by opencode and
+-- claude code so switching between them doesn't shift the editor.
+M.right_terminal_width = 80
+
+-- Visible right-hand snacks terminals (opencode, claude code). Both are
+-- created through Snacks.terminal with `position = 'right'`; claudecode.nvim
+-- patches hide/show on its instance, so `term:hide()` keeps either job alive.
+local function visible_right_terminals()
+  local terms = {}
+  for _, term in ipairs(require('snacks.terminal').list()) do
+    if term:valid() and term.opts.position == 'right' and vim.api.nvim_win_get_config(term.win).relative == '' then
+      terms[#terms + 1] = term
+    end
+  end
+  return terms
+end
+
+-- Hide all visible right-hand terminals. The right side is a single slot:
+-- only one of opencode / claude code is shown at a time, so call this before
+-- showing either. Returns the hidden terminals.
+function M.hide_right_terminals()
+  local hidden = visible_right_terminals()
+  for _, term in ipairs(hidden) do
+    term:hide()
+  end
+  return hidden
+end
+
 -- Run `fn` (which opens a full-width bottom panel, e.g. the overseer task
 -- list) with all visible right-hand snacks terminals (e.g. opencode) hidden,
 -- then show them again.
@@ -14,13 +42,7 @@ local M = {}
 -- size, so hiding it first and showing it afterwards sends no resize at all,
 -- and the re-shown window is a fresh full-height column on the right.
 function M.with_right_terminals_hidden(fn)
-  local hidden = {}
-  for _, term in ipairs(require('snacks.terminal').list()) do
-    if term:valid() and term.opts.position == 'right' and vim.api.nvim_win_get_config(term.win).relative == '' then
-      term:hide()
-      hidden[#hidden + 1] = term
-    end
-  end
+  local hidden = M.hide_right_terminals()
 
   fn()
 
