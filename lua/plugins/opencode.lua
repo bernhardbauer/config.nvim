@@ -5,6 +5,10 @@ local oc = function(method, ...)
   end
 end
 
+local opencode_cmd = 'opencode --port'
+---@type snacks.terminal.Opts
+local opencode_start_opts = { win = { position = 'right', enter = false } }
+
 return {
   {
     'nickjvandyke/opencode.nvim',
@@ -19,8 +23,11 @@ return {
           input = {}, -- Enhances `ask()`
           picker = { -- Enhances `select()`
             actions = {
-              opencode_send = function(...)
-                return require('opencode').snacks_picker_send(...)
+              opencode_send = function(picker) ---@param picker snacks.Picker
+                local items = vim.tbl_map(function(item) ---@param item snacks.picker.Item
+                  return item.file and require('opencode').format { path = item.file, from = item.pos, to = item.end_pos } or item.text
+                end, picker:selected { fallback = true })
+                require('opencode').prompt(table.concat(items, ', ') .. ' ')
               end,
             },
             win = {
@@ -37,8 +44,11 @@ return {
     init = function()
       ---@type opencode.Opts
       vim.g.opencode_opts = {
-        -- Your configuration, if any; goto definition on the type or field for details
-        lsp = { enabled = true },
+        server = {
+          start = function()
+            require('snacks.terminal').open(opencode_cmd, opencode_start_opts)
+          end,
+        },
       }
 
       vim.o.autoread = true -- Required for `opts.events.reload`
@@ -47,8 +57,7 @@ return {
       -- of which window is currently focused, so the TUI viewport stays fixed.
       local function is_opencode_win(winid)
         local buf = vim.api.nvim_win_get_buf(winid)
-        return vim.bo[buf].buftype == 'terminal'
-          and vim.api.nvim_buf_get_name(buf):match('opencode')
+        return vim.bo[buf].buftype == 'terminal' and vim.api.nvim_buf_get_name(buf):match 'opencode'
       end
       local function guard_scroll(fallback)
         return function()
@@ -59,8 +68,8 @@ return {
           return fallback
         end
       end
-      vim.keymap.set('n', '<ScrollWheelUp>',   guard_scroll('<ScrollWheelUp>'),   { expr = true })
-      vim.keymap.set('n', '<ScrollWheelDown>', guard_scroll('<ScrollWheelDown>'), { expr = true })
+      vim.keymap.set('n', '<ScrollWheelUp>', guard_scroll '<ScrollWheelUp>', { expr = true })
+      vim.keymap.set('n', '<ScrollWheelDown>', guard_scroll '<ScrollWheelDown>', { expr = true })
 
       local augroup = vim.api.nvim_create_augroup('opencode_focus_insert', { clear = true })
       vim.api.nvim_create_autocmd('WinEnter', {
@@ -80,11 +89,25 @@ return {
       })
     end,
     keys = {
-      { '<leader>cc', oc('ask', '@this: ', { submit = true }), desc = 'Ask opencode…', mode = { 'n', 'x' } },
+      { '<leader>cc', oc('ask', '@this: '), desc = 'Ask opencode…', mode = { 'n', 'x' } },
       { '<leader>cx', oc 'select', desc = 'Execute opencode action…', mode = { 'n', 'x' } },
-      { '<C-,>', oc 'toggle', desc = 'Toggle opencode', mode = { 'n', 't' } },
+      {
+        '<C-,>',
+        function()
+          require('snacks.terminal').toggle(opencode_cmd, { win = { position = 'right' } })
+        end,
+        desc = 'Toggle opencode',
+        mode = { 'n', 't' },
+      },
       { 'go', oc('operator', '@this '), desc = 'Add range to opencode', mode = { 'n', 'x' }, expr = true },
-      { 'goo', oc('@this ' .. '_'), desc = 'Add line to opencode', expr = true },
+      {
+        'goo',
+        function()
+          return require('opencode').operator '@this ' .. '_'
+        end,
+        desc = 'Add line to opencode',
+        expr = true,
+      },
     },
   },
 }
