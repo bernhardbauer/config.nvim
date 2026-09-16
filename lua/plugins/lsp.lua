@@ -12,6 +12,7 @@ local servers = {
   csharp_ls = {},
   ts_ls = {},
   angularls = {},
+  eslint = {}, -- vscode-eslint-language-server; uses the project's eslint.config.*
   tflint = {},
   emmet_ls = {
     filetypes = { 'html', 'css', 'scss', 'sass', 'less', 'javascriptreact', 'typescriptreact', 'vue', 'svelte' },
