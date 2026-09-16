@@ -59,11 +59,11 @@ return {
           { section = 'startup' },
         },
       },
-      input = {}, -- used by opencode.ask()
+      input = {}, -- also used by opencode.ask()
       picker = {
-        hidden = true, -- show hidden files by default across all sources
         sources = {
           explorer = {
+            hidden = true, -- show hidden files in the explorer
             jump = { close = false, tagstack = true },
           },
         },

@@ -8,15 +8,21 @@ function M.close_non_dap_panels()
   if explorer then
     explorer:close()
   end
-  require('overseer').close()
-  require('neotest').summary.close()
-  require('neotest').output_panel.close()
+  if package.loaded['overseer'] then
+    require('overseer').close()
+  end
+  if package.loaded['neotest'] then
+    require('neotest').summary.close()
+    require('neotest').output_panel.close()
+  end
 end
 
 -- Close all plugin open panels
 function M.close_all_panels()
   M.close_non_dap_panels()
-  require('dapui').close()
+  if package.loaded['dapui'] then
+    require('dapui').close()
+  end
   require('configs.layout').hide_right_terminals()
 end
 

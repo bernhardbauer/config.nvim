@@ -1,6 +1,7 @@
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
 --
+--  Keys are the names used by `vim.lsp.config` (nvim-lspconfig's `lsp/<name>.lua`).
 --  Add any additional override configuration in the following tables. Available keys are:
 --  - cmd (table): Override the default command used to start the server
 --  - filetypes (table): Override the default list of associated filetypes for the server
@@ -8,11 +9,9 @@
 --  - settings (table): Override the default settings passed when initializing the server.
 --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
 local servers = {
-  csharpier = {},
-  ['csharp-language-server'] = {},
-  ['js-debug-adapter'] = {},
-  ['typescript-language-server'] = {},
-  ['angular-language-server'] = {},
+  csharp_ls = {},
+  ts_ls = {},
+  angularls = {},
   tflint = {},
   emmet_ls = {
     filetypes = { 'html', 'css', 'scss', 'sass', 'less', 'javascriptreact', 'typescriptreact', 'vue', 'svelte' },
@@ -28,6 +27,13 @@ local servers = {
       },
     },
   },
+}
+
+-- Mason packages that are not language servers (formatters, debug adapters).
+local tools = {
+  'csharpier',
+  'js-debug-adapter',
+  'stylua', -- Used to format Lua code
 }
 
 return {
@@ -182,30 +188,23 @@ return {
           -- typescript specifics
           if client and client.name == 'ts_ls' then
             local make_source_action_command = function(bufnr, client, source_action)
-              local params = vim.lsp.util.make_range_params()
+              local params = vim.lsp.util.make_range_params(0, client.offset_encoding)
               params.context = {
                 only = { source_action },
                 diagnostics = vim.diagnostic.get(bufnr),
               }
 
-              client.request('textDocument/codeAction', params, function(err, res)
+              client:request('textDocument/codeAction', params, function(err, res)
                 assert(not err, err)
-                if
-                  res
-                  and res[1]
-                  and res[1].edit
-                  and res[1].edit.documentChanges
-                  and res[1].edit.documentChanges[1]
-                  and res[1].edit.documentChanges[1].edits
-                then
-                  vim.lsp.util.apply_text_edits(res[1].edit.documentChanges[1].edits, bufnr, client.offset_encoding)
+                if res and res[1] and res[1].edit then
+                  vim.lsp.util.apply_workspace_edit(res[1].edit, client.offset_encoding)
                 end
               end, bufnr)
             end
 
             map('gru', function()
               make_source_action_command(event.buf, client, 'source.removeUnused.ts')
-            end, 'TS Organize Imports')
+            end, 'TS Remove Unused')
 
             map('gro', function()
               make_source_action_command(event.buf, client, 'source.organizeImports.ts')
@@ -247,36 +246,28 @@ return {
         },
       }
 
-      -- LSP servers and clients are able to communicate to each other what features they support.
-      --  By default, Neovim doesn't support everything that is in the LSP specification.
-      --  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
-      --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      -- Per-server overrides. blink.cmp registers its completion capabilities
+      -- for every server itself (vim.lsp.config('*', ...)), so nothing to merge.
+      for name, config in pairs(servers) do
+        if next(config) then
+          vim.lsp.config(name, config)
+        end
+      end
 
       -- Ensure the servers and tools above are installed
       --
       -- To check the current status of installed tools and/or manually install
       -- other tools, you can run
       --    :Mason
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
+      local ensure_installed = vim.tbl_keys(servers)
+      vim.list_extend(ensure_installed, tools)
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
+      -- mason-lspconfig v2 enables every installed server through vim.lsp.enable().
+      -- stylua is installed as a formatter only; keep its LSP mode off.
       require('mason-lspconfig').setup {
-        ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
-        automatic_installation = false,
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
+        ensure_installed = {},
+        automatic_enable = { exclude = { 'stylua' } },
       }
     end,
   },

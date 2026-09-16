@@ -11,12 +11,11 @@ end
 return {
   {
     'stevearc/overseer.nvim',
-    opts = {},
     config = function()
       require('overseer').setup {
-        templates = { 'builtin', 'user.dotnet_run' },
         task_list = {
-          bindings = {
+          -- Free <C-hjkl> for window navigation; overseer maps them to scrolling by default.
+          keymaps = {
             ['<C-h>'] = false,
             ['<C-j>'] = false,
             ['<C-k>'] = false,
@@ -112,13 +111,11 @@ return {
         end,
       })
 
-      -- Make Overseer windows non-editable and prevent buffer switching
+      -- Prevent switching buffers in the task list window.
       vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('overseer_list_winfixbuf', { clear = true }),
         pattern = 'OverseerList',
         callback = function()
-          vim.bo.modifiable = false
-          vim.bo.buftype = 'nofile'
-          -- Prevent switching buffers in this window (Neovim 0.10+)
           vim.wo.winfixbuf = true
         end,
       })

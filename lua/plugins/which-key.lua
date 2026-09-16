@@ -54,7 +54,7 @@ return {
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>p', group = '[P]rettify' },
         { '<leader>r', group = '[R]un' },
-        { '<leader>rn', group = '[R]und [N]pm Tasks' },
+        { '<leader>rn', group = '[R]un [N]pm Tasks' },
         { '<leader>t', group = '[T]est' },
         { '<leader>x', group = '[X]tras (toggles)' },
       },

@@ -132,7 +132,7 @@ return {
             cwd = find_vitest_config_dir,
           }),
         },
-        log_level = vim.log.levels.DEBUG, -- Set the log level
+        log_level = vim.log.levels.WARN,
       }
     end,
     config = function(_, opts)

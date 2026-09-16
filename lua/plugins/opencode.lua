@@ -21,7 +21,6 @@ return {
         'folke/snacks.nvim',
         optional = true,
         opts = {
-          input = {}, -- Enhances `ask()`
           picker = { -- Enhances `select()`
             actions = {
               opencode_send = function(picker) ---@param picker snacks.Picker
@@ -34,7 +33,7 @@ return {
             win = {
               input = {
                 keys = {
-                  ['<leader>ca'] = { 'opencode_send', mode = { 'n', 'i' } },
+                  ['<leader>ca'] = { 'opencode_send', mode = { 'n' } },
                 },
               },
             },
@@ -52,8 +51,6 @@ return {
           end,
         },
       }
-
-      vim.o.autoread = true -- Required for `opts.events.reload`
 
       -- Disable normal-mode mouse scrolling over the opencode window regardless
       -- of which window is currently focused, so the TUI viewport stays fixed.

@@ -26,14 +26,22 @@ end
 function M.get_highest_net_folder(bin_debug_path)
   local dirs = vim.fn.glob(bin_debug_path .. '/net*', false, true) -- Get all folders starting with 'net' in bin_debug_path
 
-  if dirs == 0 then
+  if #dirs == 0 then
     error('No netX.Y folders found in ' .. bin_debug_path)
   end
 
-  table.sort(dirs, function(a, b) -- Sort the directories based on their version numbers
-    local ver_a = tonumber(a:match 'net(%d+)%.%d+')
-    local ver_b = tonumber(b:match 'net(%d+)%.%d+')
-    return ver_a > ver_b
+  -- Highest netX.Y first; folders without that shape (e.g. netstandard2.0) sort last.
+  local function version(dir)
+    local major, minor = dir:match 'net(%d+)%.(%d+)'
+    return tonumber(major) or 0, tonumber(minor) or 0
+  end
+  table.sort(dirs, function(a, b)
+    local major_a, minor_a = version(a)
+    local major_b, minor_b = version(b)
+    if major_a ~= major_b then
+      return major_a > major_b
+    end
+    return minor_a > minor_b
   end)
 
   return dirs[1]
@@ -55,7 +63,8 @@ function M.build_project(project_root, csproj_path)
   echo('Building ' .. vim.fn.fnamemodify(csproj_path, ':t') .. '...')
   local result = vim.system({ 'dotnet', 'build', csproj_path, '--configuration', 'Debug' }, { text = true }):wait()
   if result.code ~= 0 then
-    vim.notify('Build failed:\n' .. (result.stderr or result.stdout or ''), vim.log.levels.ERROR)
+    -- dotnet reports compile errors on stdout; stderr is usually empty, not nil.
+    vim.notify('Build failed:\n' .. (result.stdout or '') .. (result.stderr or ''), vim.log.levels.ERROR)
     error 'Build failed'
   end
 end
@@ -143,30 +152,6 @@ function M.get_launch_args()
   end
   local _, args = M.read_launch_settings(project_root)
   return args
-end
-
--- Legacy: kept for compatibility (no build step).
-function M.build_dll_path()
-  local current_file = vim.api.nvim_buf_get_name(0)
-  local current_dir = vim.fn.fnamemodify(current_file, ':p:h')
-
-  local project_root = M.find_project_root_by_csproj(current_dir)
-  if not project_root then
-    error 'Could not find project root (no .csproj found)'
-  end
-
-  local csproj_files = vim.fn.glob(project_root .. '/*.csproj', false, true)
-  if #csproj_files == 0 then
-    error 'No .csproj file found in project root'
-  end
-
-  local project_name = vim.fn.fnamemodify(csproj_files[1], ':t:r')
-  local bin_debug_path = project_root .. '/bin/Debug'
-  local highest_net_folder = M.get_highest_net_folder(bin_debug_path)
-  local dll_path = highest_net_folder .. '/' .. project_name .. '.dll'
-
-  print('Launching: ' .. dll_path)
-  return dll_path
 end
 
 return M

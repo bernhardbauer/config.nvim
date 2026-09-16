@@ -32,7 +32,8 @@ return {
       formatters = {
         csharpier = {
           command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
-          args = { 'format', '--write-stdout' },
+          -- --stdin-path lets csharpier find .csharpierrc/.editorconfig for the file
+          args = { 'format', '--write-stdout', '--stdin-path', '$FILENAME' },
         },
         terraformfmt = {
           command = 'terraform',

@@ -88,14 +88,35 @@ return {
       { '<leader>dd', smart_continue, desc = '[C]ontinue/Run' },
       { '<leader>dB', '<cmd>lua require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))<cr>', desc = '[B]reakpoint Condition' },
       { '<leader>db', '<cmd>lua require("dap").toggle_breakpoint()<cr>', desc = '[B]reakpoint Toggle' },
-      { '<leader>da', '<cmd>lua require("dap").continue({ before = get_args })<cr>', desc = 'Continue/Run with [A]rgs' },
+      {
+        '<leader>da',
+        function()
+          require('dap').continue {
+            -- Prompt for program arguments and run the chosen configuration with them.
+            before = function(config)
+              local args = vim.fn.input 'Args: '
+              config = vim.deepcopy(config)
+              config.args = vim.split(args, ' +', { trimempty = true })
+              return config
+            end,
+          }
+        end,
+        desc = 'Continue/Run with [A]rgs',
+      },
       { '<leader>dC', '<cmd>lua require("dap").run_to_cursor()<cr>', desc = 'Run to [C]ursor' },
       { '<leader>dg', '<cmd>lua require("dap").goto_()<cr>', desc = '[G]o to Line (No Execute)' },
       { '<leader>dj', '<cmd>lua require("dap").down()<cr>', desc = 'Down' },
       { '<leader>dk', '<cmd>lua require("dap").up()<cr>', desc = 'Up' },
       { '<leader>dl', '<cmd>lua require("dap").run_last()<cr>', desc = 'Run [L]ast' },
       { '<leader>dP', '<cmd>lua require("dap").pause()<cr>', desc = '[P]ause' },
-      { '<leader>ds', '<cmd>lua require("dap").session()<cr>', desc = '[S]ession' },
+      {
+        '<leader>ds',
+        function()
+          local widgets = require 'dap.ui.widgets'
+          widgets.centered_float(widgets.sessions)
+        end,
+        desc = '[S]essions',
+      },
       { '<leader>dt', '<cmd>lua require("dap").terminate()<cr>', desc = '[T]erminate' },
       { '<leader>dx', '<cmd>lua require("dap").clear_breakpoints()<cr>', desc = '[X] Clear all breakpoints' },
       { '<leader>de', '<cmd>lua require("dap.ui.widgets").hover()<cr>', desc = '[E]xpand current variable' },

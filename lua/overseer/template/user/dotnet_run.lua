@@ -52,12 +52,4 @@ return {
 
     return ret
   end,
-  condition = {
-    callback = function()
-      local files = {}
-      vim.list_extend(files, vim.fn.glob('*.csproj', false, true))
-      vim.list_extend(files, vim.fn.glob('*/*.csproj', false, true))
-      return #files > 0
-    end,
-  },
 }
