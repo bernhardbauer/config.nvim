@@ -175,14 +175,40 @@ return {
       dap.adapters.netcoredbg = dotnet_adapter -- normal debugging
       dap.configurations.cs = dotnet_configuration
 
-      -- nodejs
-      dap.adapters['pwa-node'] = {
+      -- nodejs / chrome: both are served by vscode-js-debug
+      local js_debug_adapter = {
         type = 'server',
         host = 'localhost',
         port = '${port}',
         executable = {
           command = 'node',
           args = { os.getenv 'HOME' .. '/.local/share/nvim/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js', '${port}' },
+        },
+      }
+      dap.adapters['pwa-node'] = js_debug_adapter
+      dap.adapters['pwa-chrome'] = js_debug_adapter
+
+      -- Browser debugging for the Angular apps / extension pages.
+      local chrome_configuration = {
+        {
+          type = 'pwa-chrome',
+          request = 'launch',
+          name = 'launch - chrome (dev server url)',
+          url = function()
+            return vim.fn.input('URL: ', 'http://localhost:4200')
+          end,
+          webRoot = '${workspaceFolder}',
+          sourceMaps = true,
+          skipFiles = { '<node_internals>/**', '**/node_modules/**' },
+        },
+        {
+          type = 'pwa-chrome',
+          request = 'attach',
+          name = 'attach - chrome (--remote-debugging-port=9222)',
+          port = 9222,
+          webRoot = '${workspaceFolder}',
+          sourceMaps = true,
+          skipFiles = { '<node_internals>/**', '**/node_modules/**' },
         },
       }
 
@@ -241,8 +267,10 @@ return {
         },
       }
 
+      vim.list_extend(typescript_configuration, chrome_configuration)
       dap.configurations.typescript = typescript_configuration
       dap.configurations.typescriptreact = typescript_configuration
+      dap.configurations.html = chrome_configuration
     end,
   },
 }

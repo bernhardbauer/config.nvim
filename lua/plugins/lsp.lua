@@ -14,6 +14,9 @@ local servers = {
   angularls = {},
   eslint = {}, -- vscode-eslint-language-server; uses the project's eslint.config.*
   tflint = {},
+  -- jsonls / yamlls settings are filled in at setup time from schemastore (see below).
+  jsonls = {},
+  yamlls = {},
   emmet_ls = {
     filetypes = { 'html', 'css', 'scss', 'sass', 'less', 'javascriptreact', 'typescriptreact', 'vue', 'svelte' },
   },
@@ -64,6 +67,9 @@ return {
 
       -- Useful status updates for LSP.
       { 'j-hui/fidget.nvim', opts = {} },
+
+      -- JSON/YAML schemas (nx.json, project.json, package.json, tsconfig, CI files, ...)
+      'b0o/schemastore.nvim',
 
       -- Allows extra capabilities provided by blink.cmp
       'saghen/blink.cmp',
@@ -244,6 +250,43 @@ return {
             }
             return diagnostic_message[diagnostic.severity]
           end,
+        },
+      }
+
+      local schemastore = require 'schemastore'
+      servers.jsonls = {
+        settings = {
+          json = {
+            schemas = schemastore.json.schemas {
+              -- SchemaStore's "project.json" is the legacy .NET Core one; use Nx's
+              -- own schemas from the workspace's node_modules instead.
+              ignore = { 'project.json' },
+              extra = {
+                {
+                  name = 'Nx project.json',
+                  description = 'Nx project configuration',
+                  fileMatch = { 'project.json' },
+                  url = './node_modules/nx/schemas/project-schema.json',
+                },
+                {
+                  name = 'nx.json',
+                  description = 'Nx workspace configuration',
+                  fileMatch = { 'nx.json' },
+                  url = './node_modules/nx/schemas/nx-schema.json',
+                },
+              },
+            },
+            validate = { enable = true },
+          },
+        },
+      }
+      servers.yamlls = {
+        settings = {
+          yaml = {
+            -- Use schemastore.nvim's catalog instead of the server's own download.
+            schemaStore = { enable = false, url = '' },
+            schemas = schemastore.yaml.schemas(),
+          },
         },
       }
 
