@@ -135,6 +135,24 @@ return {
         log_level = vim.log.levels.DEBUG, -- Set the log level
       }
     end,
+    config = function(_, opts)
+      require('neotest').setup(opts)
+
+      -- The output float (<leader>to) has no close mapping of its own.
+      vim.api.nvim_create_autocmd('FileType', {
+        group = vim.api.nvim_create_augroup('neotest_output_close', { clear = true }),
+        pattern = 'neotest-output',
+        callback = function(ev)
+          for _, key in ipairs { '<Esc>', 'q' } do
+            vim.keymap.set('n', key, function()
+              if vim.api.nvim_win_get_config(0).relative ~= '' then
+                vim.api.nvim_win_close(0, true)
+              end
+            end, { buffer = ev.buf, desc = 'Close test output' })
+          end
+        end,
+      })
+    end,
     keys = {
       { '<leader>tt', '<cmd>lua require("neotest").run.run()<cr>', desc = '[R]un Nearest' },
       {
