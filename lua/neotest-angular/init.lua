@@ -5,7 +5,8 @@ local logger = require 'neotest.logging'
 local vitest_util = require 'neotest-vitest.util'
 
 ---@class neotest.AngularOptions
----@field angularCommand? string|fun(path: string): string|string[]
+---@field angularCommand? string|fun(path: string): string|string[] `ng` command for angular.json workspaces
+---@field nxCommand? string|fun(path: string): string|string[] `nx` command for nx.json workspaces
 ---@field filter_dir? fun(name: string, rel_path: string, root: string): boolean
 
 ---@class neotest.Adapter
@@ -110,9 +111,13 @@ local function relative_to(root, path)
   return path:sub(#root + 2)
 end
 
-local function angular_root(path)
+-- Workspace root: an Angular CLI workspace (angular.json) or an Nx workspace
+-- (nx.json). Both run tests through the `@angular/build:unit-test` builder;
+-- they differ in where projects are declared and in what `--include` paths are
+-- relative to.
+local function workspace_root(path)
   return vitest_util.search_ancestors(path, function(dir)
-    return vitest_util.path.is_file(path_join(dir, 'angular.json'))
+    return vitest_util.path.is_file(path_join(dir, 'angular.json')) or vitest_util.path.is_file(path_join(dir, 'nx.json'))
   end)
 end
 
@@ -138,7 +143,8 @@ local function supports_vitest(project)
     return false
   end
 
-  if test_target.builder ~= '@angular/build:unit-test' then
+  local builder = test_target.builder or test_target.executor
+  if builder ~= '@angular/build:unit-test' then
     return false
   end
 
@@ -147,40 +153,34 @@ local function supports_vitest(project)
 end
 
 local function get_workspace(path)
-  local root = angular_root(path)
+  local root = workspace_root(path)
   if not root then
     return nil
   end
+  root = normalize(root)
 
-  local workspace = read_json(path_join(root, 'angular.json'))
-  if not workspace then
-    return nil
+  if vitest_util.path.is_file(path_join(root, 'angular.json')) then
+    local workspace = read_json(path_join(root, 'angular.json'))
+    if not workspace then
+      return nil
+    end
+    return { kind = 'angular', root = root, config = workspace }
   end
 
-  return {
-    root = normalize(root),
-    config = workspace,
-  }
+  return { kind = 'nx', root = root }
 end
 
-local function get_project_for_path(path)
-  local workspace = get_workspace(path)
-  if not workspace then
-    return nil
-  end
-
-  local best_name
-  local best_project
-  local best_root
+-- Angular CLI: projects are listed in angular.json; pick the deepest one
+-- containing `path`.
+local function get_angular_project_for_path(workspace, path)
+  local best_name, best_project, best_root
 
   for name, project in pairs(workspace.config.projects or {}) do
     if supports_vitest(project) then
       local project_root = get_project_root(workspace.root, project)
       if is_descendant(project_root, path) then
         if not best_root or #project_root > #best_root then
-          best_name = name
-          best_project = project
-          best_root = project_root
+          best_name, best_project, best_root = name, project, project_root
         end
       end
     end
@@ -191,13 +191,64 @@ local function get_project_for_path(path)
   end
 
   return {
+    kind = 'angular',
     workspace_root = workspace.root,
-    workspace = workspace.config,
     name = best_name,
-    project = best_project,
     project_root = best_root,
     test_target = get_test_target(best_project),
   }
+end
+
+-- Nx: the project is the nearest ancestor directory (within the workspace)
+-- holding a project.json. Cached per directory; project.json rarely changes.
+local nx_project_cache = {}
+
+local function get_nx_project_for_path(workspace, path)
+  local dir = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ':h')
+  dir = normalize(dir)
+
+  while is_descendant(workspace.root, dir) do
+    local cached = nx_project_cache[dir]
+    if cached ~= nil then
+      return cached or nil
+    end
+
+    local project_file = path_join(dir, 'project.json')
+    if vitest_util.path.is_file(project_file) then
+      local project = read_json(project_file) or {}
+      local result = false
+      if supports_vitest(project) then
+        result = {
+          kind = 'nx',
+          workspace_root = workspace.root,
+          name = project.name or vim.fn.fnamemodify(dir, ':t'),
+          project_root = dir,
+          test_target = get_test_target(project),
+        }
+      end
+      nx_project_cache[dir] = result
+      return result or nil
+    end
+
+    if dir == workspace.root then
+      break
+    end
+    dir = vim.fn.fnamemodify(dir, ':h')
+  end
+
+  return nil
+end
+
+local function get_project_for_path(path)
+  local workspace = get_workspace(path)
+  if not workspace then
+    return nil
+  end
+
+  if workspace.kind == 'angular' then
+    return get_angular_project_for_path(workspace, path)
+  end
+  return get_nx_project_for_path(workspace, path)
 end
 
 local function is_spec_file(file_path)
@@ -242,32 +293,31 @@ local function get_name_pattern(tree)
   return '^\\s?' .. escape_test_pattern(pattern)
 end
 
-local function resolve_angular_command(path)
-  if type(options.angularCommand) == 'function' then
-    return options.angularCommand(path)
+local function resolve_command(project, path)
+  local bin = project.kind == 'nx' and 'nx' or 'ng'
+  local override = project.kind == 'nx' and options.nxCommand or options.angularCommand
+  if type(override) == 'function' then
+    return override(path)
+  end
+  if type(override) == 'string' then
+    return override
   end
 
-  if type(options.angularCommand) == 'string' then
-    return options.angularCommand
+  local local_bin = path_join(project.workspace_root, 'node_modules', '.bin', bin)
+  if vitest_util.path.exists(local_bin) then
+    return local_bin
   end
 
-  local project = get_project_for_path(path)
-  local workspace_root = project and project.workspace_root or angular_root(path) or vim.fn.getcwd()
-  local local_ng = path_join(workspace_root, 'node_modules', '.bin', 'ng')
-  if vitest_util.path.exists(local_ng) then
-    return local_ng
+  local package_json = read_json(path_join(project.workspace_root, 'package.json')) or {}
+  if type(package_json.packageManager) == 'string' and package_json.packageManager:match '^bun' then
+    return { 'bun', bin }
   end
 
-  local package_json = read_json(path_join(workspace_root, 'package.json')) or {}
-  if package_json.packageManager == 'bun' then
-    return { 'bun', 'ng' }
-  end
-
-  return { 'npx', 'ng' }
+  return { 'npx', bin }
 end
 
 adapter.root = function(dir)
-  return angular_root(dir)
+  return workspace_root(dir)
 end
 
 function adapter.filter_dir(name, rel_path, root)
@@ -310,9 +360,13 @@ function adapter.build_spec(args)
     include_path = file_node:data().path
   end
 
-  local relative_include = relative_to(project.project_root, include_path)
+  -- `--include` is documented as relative to the project root, which holds
+  -- for `ng`; when the builder runs under `nx` it resolves against the
+  -- workspace root instead.
+  local include_root = project.kind == 'nx' and project.workspace_root or project.project_root
+  local relative_include = relative_to(include_root, include_path)
   local results_path = async.fn.tempname() .. '.json'
-  local command = resolve_angular_command(pos.path)
+  local command = resolve_command(project, pos.path)
   if type(command) == 'string' then
     command = vim.split(command, '%s+')
   end
@@ -322,7 +376,11 @@ function adapter.build_spec(args)
     'test',
     project.name,
     '--watch=false',
+    -- `--output-file` applies to the first reporter only; the default
+    -- reporter keeps readable failures in the process output that neotest
+    -- shows in its output panel.
     '--reporters=json',
+    '--reporters=default',
     '--output-file=' .. results_path,
     '--include=' .. relative_include,
   })
@@ -332,11 +390,20 @@ function adapter.build_spec(args)
     table.insert(command, '--filter=' .. pattern)
   end
 
+  if project.kind == 'nx' then
+    -- The results file is not a declared nx output, so a cache hit would
+    -- replay the run without writing it.
+    table.insert(command, '--skip-nx-cache')
+  end
+
   vim.list_extend(command, args.extra_args or {})
 
   return {
     command = command,
     cwd = project.workspace_root,
+    -- neotest runs in a pty; nx would otherwise show its interactive TUI and
+    -- linger on its exit countdown.
+    env = { NX_TUI = 'false' },
     context = {
       results_path = results_path,
       file = include_path,

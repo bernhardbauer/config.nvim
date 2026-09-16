@@ -64,6 +64,33 @@ return {
       'Issafalcon/neotest-dotnet',
     },
     opts = function()
+      -- Adapters that share a root and both claim a file are picked in hash
+      -- table order by neotest, i.e. at random. Make the claims exclusive:
+      -- files inside Angular/Nx projects that test through
+      -- `@angular/build:unit-test` belong to the Angular adapter only.
+      local angular = require 'neotest-angular'()
+
+      -- Files importing from `bun:test` can only be run by `bun test`, which
+      -- no configured adapter does; leave them unclaimed rather than letting
+      -- jest/vitest fail on the import.
+      local function is_bun_test_file(file_path)
+        local f = io.open(file_path, 'r')
+        if not f then
+          return false
+        end
+        local head = f:read(4096) or ''
+        f:close()
+        return head:find("from ['\"]bun:test['\"]") ~= nil
+      end
+
+      local function without_angular_files(adapter)
+        local is_test_file = adapter.is_test_file
+        adapter.is_test_file = function(file_path)
+          return not angular.is_test_file(file_path) and not is_bun_test_file(file_path) and is_test_file(file_path)
+        end
+        return adapter
+      end
+
       return {
         discovery = {
           enabled = true,
@@ -96,17 +123,14 @@ return {
               adapter_name = 'netcoredbg',
             },
           },
-          -- Put Angular ahead of the generic JS adapters so Angular workspaces
-          -- execute through `ng test` even when a parent package also exposes
-          -- Jest or Vitest dependencies.
-          require 'neotest-angular'(),
-          require 'neotest-jest' {
+          angular,
+          without_angular_files(require 'neotest-jest' {
             jest_test_discovery = false,
             cwd = find_jest_config_dir,
-          },
-          require 'neotest-vitest' {
+          }),
+          without_angular_files(require 'neotest-vitest' {
             cwd = find_vitest_config_dir,
-          },
+          }),
         },
         log_level = vim.log.levels.DEBUG, -- Set the log level
       }
