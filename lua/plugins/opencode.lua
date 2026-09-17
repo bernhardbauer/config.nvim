@@ -6,9 +6,9 @@ local oc = function(method, ...)
 end
 
 local opencode_cmd = 'opencode --port'
-local opencode_width = require('configs.layout').right_terminal_width
 ---@type snacks.terminal.Opts
-local opencode_start_opts = { win = { position = 'right', width = opencode_width, enter = false } }
+local opencode_start_opts = { win = vim.tbl_extend('force', require('configs.layout').right_terminal_win(), { enter = false }) }
+local opencode_width = require('configs.layout').right_terminal_width
 
 return {
   {

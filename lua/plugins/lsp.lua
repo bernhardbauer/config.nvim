@@ -13,6 +13,7 @@ local servers = {
   ts_ls = {},
   angularls = {},
   eslint = {}, -- vscode-eslint-language-server; uses the project's eslint.config.*
+  typos_lsp = {}, -- spelling in identifiers, strings and comments
   tflint = {},
   -- jsonls / yamlls settings are filled in at setup time from schemastore (see below).
   jsonls = {},
@@ -190,6 +191,13 @@ return {
             map('<leader>xh', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Toggle LSP Inlay [H]ints')
+          end
+
+          -- eslint: apply every auto-fixable rule in the buffer (on demand, not on save)
+          if client and client.name == 'eslint' then
+            map('gre', function()
+              vim.cmd 'LspEslintFixAll'
+            end, '[E]SLint fix all')
           end
 
           -- typescript specifics

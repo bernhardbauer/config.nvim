@@ -13,6 +13,19 @@ return {
     'stevearc/overseer.nvim',
     config = function()
       require('overseer').setup {
+        component_aliases = {
+          default = {
+            'on_exit_set_status',
+            'on_complete_notify',
+            { 'on_complete_dispose', require_view = { 'SUCCESS', 'FAILURE' } },
+            -- Parse tsc / eslint style errors out of any task's output ...
+            { 'on_output_parse', problem_matcher = { '$tsc', '$eslint-stylish', '$eslint-compact' } },
+            -- ... show them as diagnostics in the buffers and fill the quickfix
+            -- list (]q / [q to jump, <leader>fq to browse).
+            'on_result_diagnostics',
+            { 'on_result_diagnostics_quickfix', open = false },
+          },
+        },
         task_list = {
           -- Free <C-hjkl> for window navigation; overseer maps them to scrolling by default.
           keymaps = {

@@ -43,6 +43,45 @@ return {
         return '%2l:%-2v'
       end
 
+      -- Branch: keep the type prefix and the ticket key, drop the description.
+      --   feature/ABC-1234-add-rule-editor -> feature/ABC-1234
+      --   feat/rule-test-phase-c-editors   -> feat/rule-test-p…
+      --   main                             -> main
+      local function short_branch(branch)
+        local prefix, rest = branch:match '^([^/]+)/(.+)$'
+        if not prefix then
+          return branch
+        end
+        local ticket = rest:match '^(%u+%-%d+)'
+        if ticket then
+          return prefix .. '/' .. ticket
+        end
+        local max = 12
+        if vim.fn.strchars(rest) > max then
+          rest = vim.fn.strcharpart(rest, 0, max) .. '…'
+        end
+        return prefix .. '/' .. rest
+      end
+
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_git = function(args)
+        if statusline.is_truncated(args.trunc_width) then
+          return ''
+        end
+        local branch = vim.b.minigit_summary_string or vim.b.gitsigns_head
+        if branch == nil then
+          return ''
+        end
+        local icon = vim.g.have_nerd_font and '' or 'Git'
+        return icon .. ' ' .. (branch == '' and '-' or short_branch(branch))
+      end
+
+      -- File name only (no path), with modified/readonly flags.
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_filename = function()
+        return '%t%m%r'
+      end
+
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
     end,

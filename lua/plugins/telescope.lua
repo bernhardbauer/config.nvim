@@ -90,6 +90,11 @@ return {
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
+        defaults = {
+          -- Cut long paths from the left so the file name and as many parent
+          -- directories as fit stay visible: …/components/rules-page/rules-page.component.ts
+          path_display = { 'truncate' },
+        },
         pickers = {
           find_files = {
             hidden = true,
@@ -111,6 +116,7 @@ return {
       { '<leader>fg', with_filters('live_grep', 'Live Grep'), desc = '[F]ind by [G]rep' },
       { '<leader>fd', '<cmd>Telescope diagnostics<cr>', desc = '[F]ind [D]iagnostics' },
       { '<leader>fr', '<cmd>Telescope resume<cr>', desc = '[F]ind [R]esume' },
+      { '<leader>fq', '<cmd>Telescope quickfix<cr>', desc = '[F]ind [Q]uickfix (task errors)' },
       { '<leader>f.', '<cmd>Telescope oldfiles<cr>', desc = '[F]ind Recent Files ("." for repeat)' },
       { '<leader><leader>', '<cmd>Telescope buffers<cr>', desc = '[ ] Find existing buffers' },
       { '<leader>ft', '<cmd>TodoTelescope<cr>', desc = '[F]ind [T]odos' },

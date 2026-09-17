@@ -99,6 +99,8 @@ return {
       { '<leader>gl', '<cmd>lua Snacks.lazygit.log_file()<cr>', desc = '[G]it file log' },
       { '\\', toggle_explorer, desc = 'Toggle Explorer' },
       { '<leader>xn', '<cmd>lua Snacks.notifier.show_history()<cr>', desc = 'Notification History' },
+      { '<leader>xz', '<cmd>lua Snacks.zen.zoom()<cr>', desc = 'Toggle [Z]oom current window' },
+      { '<leader>fu', '<cmd>lua Snacks.picker.undo()<cr>', desc = '[F]ind [U]ndo history' },
     },
   },
 }

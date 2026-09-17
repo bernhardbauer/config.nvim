@@ -8,6 +8,13 @@ local M = {}
 -- claude code so switching between them doesn't shift the editor.
 M.right_terminal_width = 80
 
+-- Window options for a terminal in the right-hand slot. No winbar: snacks
+-- would otherwise show "1: <term title>" above the terminal.
+---@return snacks.win.Config
+function M.right_terminal_win()
+  return { position = 'right', width = M.right_terminal_width, wo = { winbar = '' } }
+end
+
 -- Visible right-hand snacks terminals (opencode, claude code). Both are
 -- created through Snacks.terminal with `position = 'right'`; claudecode.nvim
 -- patches hide/show on its instance, so `term:hide()` keeps either job alive.
@@ -42,7 +49,7 @@ function M.toggle_right_terminal(cmd, opts)
   if not (shown and shown:valid()) then
     M.hide_right_terminals()
   end
-  return terminal.toggle(cmd, vim.tbl_deep_extend('force', { win = { position = 'right', width = M.right_terminal_width } }, opts or {}))
+  return terminal.toggle(cmd, vim.tbl_deep_extend('force', { win = M.right_terminal_win() }, opts or {}))
 end
 
 -- Run `fn` (which opens a full-width bottom panel, e.g. the overseer task

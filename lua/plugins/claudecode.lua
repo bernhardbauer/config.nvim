@@ -5,7 +5,7 @@ return {
     opts = {
       terminal = {
         -- Absolute width overriding split_width_percentage, aligned with opencode.
-        snacks_win_opts = { width = require('configs.layout').right_terminal_width },
+        snacks_win_opts = require('configs.layout').right_terminal_win(),
       },
     },
     keys = {
