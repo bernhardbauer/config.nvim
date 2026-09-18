@@ -57,6 +57,23 @@ local function gl(fn, ...)
   end
 end
 
+-- The Go helper resolves "the MR" once, from the branch checked out when it
+-- started, and keeps that MR id for every later request. After switching
+-- branches (lazygit, git) a plain review() therefore still shows the old MR.
+-- Restart the helper first when the branch no longer matches the loaded MR.
+local function review_current_branch()
+  local gitlab = require 'gitlab'
+  local state = require 'gitlab.state'
+  local branch = vim.trim(vim.fn.system 'git branch --show-current')
+  local loaded = state.INFO and state.INFO.source_branch
+  if loaded and loaded ~= branch then
+    state.chosen_mr_iid = 0
+    require('gitlab.server').restart(gitlab.review)
+  else
+    gitlab.review()
+  end
+end
+
 -- Source patches applied to the Go helper before compiling. Re-applied on
 -- every update by the build hook; each is a no-op if upstream changed or
 -- fixed the code.
@@ -181,7 +198,7 @@ return {
     keys = {
       -- review
       { '<leader>gmc', gl 'choose_merge_request', desc = '[C]hoose MR to review' },
-      { '<leader>gmr', gl 'review', desc = '[R]eview current branch MR' },
+      { '<leader>gmr', review_current_branch, desc = '[R]eview current branch MR' },
       { '<leader>gmR', gl 'reload_review', desc = '[R]eload review' },
       { '<leader>gms', gl 'summary', desc = 'MR [S]ummary' },
       { '<leader>gmd', gl 'toggle_discussions', desc = 'Toggle [D]iscussions' },
