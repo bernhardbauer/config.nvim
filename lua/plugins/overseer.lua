@@ -134,7 +134,7 @@ return {
       })
     end,
     keys = {
-      { '<leader>rr', '<cmd>OverseerRun<cr>', desc = '[R]un [A]ny' },
+      { '<leader>rr', '<cmd>OverseerRun<cr>', desc = '[R]un task…' },
       { '<leader>rv', toggle_task_list, desc = '[R]un [V]iew' },
       { '<leader>rt', '<cmd>OverseerTaskAction<cr>', desc = '[R]un [T]ask Action' },
       { '<leader>rs', '<cmd>OverseerShell<cr>', desc = '[R]un [S]hell' },

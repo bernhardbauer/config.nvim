@@ -47,14 +47,16 @@ return {
       -- Document existing key chains
       spec = {
         { 'gr', group = 'LSP Actions' },
-        { '<leader>c', group = 'AI / OpenCode' },
+        { '<leader>b', group = '[B]uffer' },
+        { '<leader>c', group = 'AI (opencode / claude)' },
         { '<leader>d', group = '[D]ebug' },
         { '<leader>f', group = '[F]ind' },
         { '<leader>g', group = '[G]it' },
+        { '<leader>gm', group = '[G]it [M]erge request' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
         { '<leader>p', group = '[P]rettify' },
         { '<leader>r', group = '[R]un' },
-        { '<leader>rn', group = '[R]un [N]pm Tasks' },
+        { '<leader>rn', group = '[N]pm dependencies' },
         { '<leader>t', group = '[T]est' },
         { '<leader>x', group = '[X]tras (toggles)' },
       },

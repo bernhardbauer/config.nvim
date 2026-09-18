@@ -8,7 +8,9 @@ end
 
 return {
   {
-    'sindrets/diffview.nvim',
+    -- Maintained fork of sindrets/diffview.nvim (drop-in); gitlab.nvim needs it
+    -- for GitLab-compatible rename detection.
+    'dlyongemallo/diffview-plus.nvim',
     cmd = { 'DiffviewOpen', 'DiffviewFileHistory', 'DiffviewClose' },
     opts = {
       enhanced_diff_hl = true,
@@ -35,6 +37,8 @@ return {
       },
       { '<leader>gf', '<cmd>DiffviewFileHistory %<cr>', desc = '[G]it [F]ile history' },
       { '<leader>gH', '<cmd>DiffviewFileHistory<cr>', desc = '[G]it repo [H]istory' },
+      -- Merge view: co/ct/cb/ca choose ours/theirs/base/all, ]x/[x next/prev conflict.
+      { '<leader>gx', '<cmd>DiffviewOpen<cr>', desc = '[G]it resolve conflicts ([x])' },
     },
   },
 }

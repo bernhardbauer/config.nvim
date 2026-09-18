@@ -13,7 +13,32 @@ local servers = {
   ts_ls = {},
   angularls = {},
   eslint = {}, -- vscode-eslint-language-server; uses the project's eslint.config.*
-  typos_lsp = {}, -- spelling in identifiers, strings and comments
+  typos_lsp = { -- spelling in identifiers, strings and comments
+    -- Explicit list: with none, it attaches to every buffer, including plugin
+    -- panels (e.g. gitlab.nvim's discussion tree), where wholesale buffer
+    -- rewrites crash Neovim's LSP change tracking.
+    filetypes = {
+      'typescript',
+      'javascript',
+      'html',
+      'htmlangular',
+      'css',
+      'scss',
+      'json',
+      'jsonc',
+      'yaml',
+      'markdown',
+      'lua',
+      'cs',
+      'terraform',
+      'sh',
+      'bash',
+      'dockerfile',
+      'sql',
+      'toml',
+      'gitcommit',
+    },
+  },
   tflint = {},
   -- jsonls / yamlls settings are filled in at setup time from schemastore (see below).
   jsonls = {},

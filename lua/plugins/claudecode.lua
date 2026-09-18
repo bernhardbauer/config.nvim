@@ -10,7 +10,7 @@ return {
     },
     keys = {
       {
-        '<leader>ac',
+        '<leader>ca',
         function()
           -- The right side is a single slot shared with opencode: hide
           -- whatever is there before showing claude code.
