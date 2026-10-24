@@ -110,6 +110,11 @@ end, { desc = 'Close all panels' })
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+-- Pasting over a selection normally yanks the replaced text into the unnamed
+-- register (and, via 'clipboard', the system clipboard). Visual `P` pastes
+-- without doing that, so make `p` behave the same.
+vim.keymap.set('x', 'p', 'P', { desc = 'Paste over selection without overwriting the register' })
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
