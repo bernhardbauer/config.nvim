@@ -72,6 +72,10 @@ function M.with_right_terminals_hidden(fn)
   end
   if vim.api.nvim_win_is_valid(cur) then
     vim.api.nvim_set_current_win(cur)
+    -- `term:show()` focuses the terminal, whose auto-insert queues a
+    -- `startinsert` that only takes effect after this function returns, i.e.
+    -- in `cur` rather than the terminal. Cancel it.
+    vim.cmd.stopinsert()
   end
 end
 
