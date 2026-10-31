@@ -150,6 +150,9 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Reload buffers changed on disk (e.g. by claude/opencode) so the LSP sees the new contents
+require('configs.auto-reload').setup()
+
 -- When nvim is opened with a directory argument (e.g. `nvim .`), cd into it
 vim.api.nvim_create_autocmd('VimEnter', {
   desc = 'Change to directory provided when launching neovim',
