@@ -5,7 +5,9 @@ local oc = function(method, ...)
   end
 end
 
-local opencode_cmd = 'opencode --port'
+-- OpenCode v2 attaches the TUI to its shared background service, so no
+-- `--port` is needed for opencode.nvim to discover the server.
+local opencode_cmd = 'opencode'
 ---@type snacks.terminal.Opts
 local opencode_start_opts = { win = vim.tbl_extend('force', require('configs.layout').right_terminal_win(), { enter = false }) }
 local opencode_width = require('configs.layout').right_terminal_width
@@ -13,7 +15,8 @@ local opencode_width = require('configs.layout').right_terminal_width
 return {
   {
     'nickjvandyke/opencode.nvim',
-    version = '*', -- Latest stable release
+    -- No `version`: OpenCode v2 support lives on `main`; tagged releases
+    -- (`version = '*'`) still target OpenCode v1.
     dependencies = {
       {
         -- `snacks.nvim` integration is recommended, but optional
